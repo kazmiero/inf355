@@ -1,6 +1,7 @@
 module RPN where
 
 import Prelude hiding (drop)
+import System.IO
 
 type Stack = [Int]
 
@@ -45,11 +46,14 @@ depth l = (length l : l)
 
 genericIndex :: Stack -> Int -> Int
 genericIndex [] _ = error "Invalid Input"
-genericIndex (h:_) 0 = 0
-genericIndex (h:t) n = genericIndex t (n-1)
+genericIndex (_:_) 0 = 0
+genericIndex (_:t) n = genericIndex t (n-1)
 
 pick :: Stack -> Stack 
 pick (h:t) = (genericIndex t h : t)
+
+push :: Int -> Stack -> Stack
+push i s = (i:s)
 
 parseOp :: String -> Operator
 parseOp "+" = plus
@@ -61,7 +65,28 @@ parseOp "swap" = swap
 parseOp "drop" = drop
 parseOp "depth" = depth
 parseOp "pick" = pick
+parseOp int = push (read int) 
 
 eval :: Stack -> [Operator] -> Stack
 eval s [] = s
 eval s (op : opt) = eval (op s) opt
+
+parse :: String -> [Operator]
+parse s = let w = words s
+              in parseWord w
+
+parseWord :: [String] -> [Operator]
+parseWord [] = []
+parseWord (h:t) = parseOp h : parseWord t
+
+repl :: Stack -> IO ()
+repl stack = do
+  putStr "> "
+  hFlush stdout
+  line <- getLine
+  newstack <- return $ eval stack (parse line)
+  putStrLn $ show $ reverse newstack
+  repl newstack
+
+main :: IO ()
+main = repl []
