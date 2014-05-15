@@ -2,8 +2,20 @@ module RPN where
 
 import Prelude hiding (drop)
 import System.IO
+import Peano
 
-type Stack = [Int]
+type StackI = [Int]
+type StackP = [Peano]
+
+pushI :: Int -> StackI -> StackI
+pushI i s = (i:s)
+
+pushP :: Peano -> StackP -> StackP
+pushP p s = (p:s)
+
+-- use P suffix for Peano mode, I suffix for Int mode
+type Stack = StackI
+push = pushI
 
 type Operator = Stack -> Stack
 
@@ -42,18 +54,15 @@ drop [] = []
 drop (_ : t) = t
 
 depth :: Stack -> Stack
-depth l = (length l : l)
+depth l = (fromInteger(toInteger(length l)) : l)
 
-genericIndex :: Stack -> Int -> Int
+genericIndex :: (Integral a) => Stack -> a -> a
 genericIndex [] _ = error "Invalid Input"
 genericIndex (_:_) 0 = 0
 genericIndex (_:t) n = genericIndex t (n-1)
 
 pick :: Stack -> Stack 
 pick (h:t) = (genericIndex t h : t)
-
-push :: Int -> Stack -> Stack
-push i s = (i:s)
 
 parseOp :: String -> Operator
 parseOp "+" = plus
@@ -65,7 +74,7 @@ parseOp "swap" = swap
 parseOp "drop" = drop
 parseOp "depth" = depth
 parseOp "pick" = pick
-parseOp int = push (read int) 
+parseOp int = push $ fromInteger $ toInteger (read int)
 
 eval :: Stack -> [Operator] -> Stack
 eval s [] = s
