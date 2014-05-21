@@ -2,6 +2,7 @@ module Td2 where
 
 import Data.Ratio
 import Data.List
+import Control.Applicative
 
 data Prob a = Prob [(a, Ratio Int)]
               deriving (Show)
@@ -38,8 +39,8 @@ mapFirst f l = pairList (map f (firstList l)) (secondList l)
 mapSecond :: (b->c) -> [(a,b)] -> [(a,c)] 
 mapSecond f l = pairList (firstList l) (map f (secondList l))
 
-firstList = \l -> map fst l
-secondList = \l -> map snd l
+firstList = map fst
+secondList = map snd
 
 pairList :: [a] -> [b] -> [(a,b)]
 pairList [] [] = []
@@ -64,3 +65,28 @@ pair = do
   x <- dice
   y <- dice
   return $ x + y
+
+--
+sick :: Prob Bool
+sick = Prob [(True,1%100000),(False,1-1%100000)]
+
+positive :: Bool -> Prob Bool
+positive b = Prob [(not b, 1%1000), (b, 999%1000)]
+
+results :: Prob Bool
+results = renormalize $ do
+  s <- sick
+  p <- positive s
+  if p
+     then return s
+     else fail "don't care"
+  
+renormalize :: Prob a -> Prob a
+renormalize (Prob p) = let probSum = foldl (+) 0 (snd $ unzip p)
+                     in Prob $ mapSecond (\x -> x / probSum) p
+
+cleave :: a -> [a -> b] -> [b]
+cleave a = map ($a)
+
+spread :: [a -> b] -> [a] -> [b]
+spread = zipWith ($)
